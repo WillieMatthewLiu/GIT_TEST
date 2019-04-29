@@ -1,0 +1,37 @@
+#!/bin/sh
+check_net()
+{
+	eth=$1
+	link=`ethtool $eth | grep "Link detected" | awk '{print $3}'`
+	if [ "$link" == "no" ];then
+		let "val=$val | 1"
+	else	
+		speed=`ethtool $eth | grep "Speed" | awk '{print $2}'`
+		duplex=`ethtool $eth | grep "Duplex" | awk '{print $2}'`
+		if [ "$speed" == "10Mb" -o "$duplex" == "Half" ];then
+			let "val=$val | 1"
+		fi
+	fi
+}
+
+arbiter=`cat /sys/class/gpio/gpio3/value`
+if [ x"$arbiter" = x"1" ]; then
+	#do not check arbiter agl0 status
+	echo 0
+	exit 0
+fi
+
+val=0
+if [ "$1" != "eth" ];then
+	check_net agl0 	
+	echo $val
+	exit $val
+fi
+
+for i in $(seq 0 7)
+do
+	check_net eth$i
+done
+
+echo $val
+exit 1

@@ -1,0 +1,26 @@
+mod rules
+example
+
+module_begin                                                                     
+module_name test touch file
+module_type generic_data                                                         
+module_exec time=`cat /proc/uptime  | awk '{print $1}'`;touch /home/root/test_${time}.log 
+module_interval 5
+module_description Average process in CPU (Last minute)
+/*optional begin*/
+module_initdelay     0          /* first run delay,if no set,default to 0,means without delay*/
+module_alert         1          /* 1 or 0, 0 means runs without produce alarm */   
+module_warning_type    statistics /* statistics or continue */
+module_warning_window  10         /* only valid if module_alert_type is statistics */
+module_warning       100        /* warning alarm threshold */
+module_critical      110        /* critical alarm threshold, Note once exceed the threshold only one time, would trigger the alarm */
+module_warning_gen     3          /* counte limit of exceed warning threshold */
+module_alert_rec     1          /* counte of check normal times */
+module_condition     -          /* =:check value = warning; -:critical threshold is less than warning,default is + */
+module_warning_exec  logger warning happen     /* when trigger waring, handle routine */
+module_critical_exec  reboot    			   /* when trigger critical, handle routine */
+module_alert_rec_exec logger alarm recover     /* when alarm recover, handle routine */ 
+/*optional end*/
+module_end
+
+

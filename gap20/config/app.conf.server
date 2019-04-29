@@ -1,0 +1,7 @@
+app
+set runmode server
+set uart primary speed 115200 flow no databits 8 stopbits 1 parity n
+set uart backup speed 115200 flow no databits 8 stopbits 1 parity n
+set ssl ca certificates /etc/openssl/private/server_ca.crt
+set ssl private certificates /etc/openssl/certs/server.crt
+set ssl private key /etc/openssl/private/server.key

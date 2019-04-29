@@ -1,0 +1,90 @@
+#!/bin/sh
+
+DEVICE_DTT_BASE="/sys/bus/i2c/drivers/adt7481/0-004c"
+
+set_tmp(){
+	position="temp1"
+	alm_type=$2
+	alm_lmt=$3
+	
+	if [ $1 -eq 1 ];then
+		position="temp2"
+	elif [ $1 -gt 1 ];then
+		echo "wrong alm index $1, should be 0 or 1!"
+		exit -1
+	fi
+	
+	if [ "$alm_type" != "min" -a "$alm_type" != "max" -a "$alm_type" != "crit" ];then
+		echo "alarm type $alm_type should be one of min/max/cri!"
+		exit -1
+	fi	
+	
+	let "alm_lmt=$alm_lmt*1000"
+	echo "$alm_lmt" > ${DEVICE_DTT_BASE}/${position}_${alm_type}
+}
+
+show_temp(){
+	if [ $# -eq 1 ];then
+		if [ "$1" == "0" ];then		
+			position="temp1"
+		else
+			position="temp2"
+		fi
+	else	
+		position="temp1 temp2"
+	fi
+	
+
+	alm_type="max crit"
+	
+	for pos in $position
+	do
+		temp=`cat ${DEVICE_DTT_BASE}/${pos}_input`
+		let "temp=${temp}/1000"
+		echo "$pos: cur - $temp"
+		for type in $alm_type
+		do 			
+			temp=`cat ${DEVICE_DTT_BASE}/${pos}_${type}`
+			let "temp=${temp}/1000"
+			echo "$pos: $type - $temp"
+		done
+	done	
+}
+
+help(){
+	printf "
+SET&SHOW temperature alarm - Written by wfeng <wfeng@acorn-net.com>
+usage: dtt <idx> <max> <crit>  -- set alarm limit
+                       <idx>   -- 0 local point 1 remote point
+                       <max>   -- high temperature alarm limit
+                       <crit>  -- critical temperature alarm limit,will reboot board
+       eg:dtt 0 80 100   -- set local point high limit 80'C, critical limit 100'C
+          dtt 0          -- show local point current temperature and alarm limit
+          dtt            -- show all point current temperature and alarm limit
+       dtt -h | --help\n"
+}
+
+set_all_alm(){
+	pos=$1
+	val=($2 $3)
+	i=0
+	alm_type="max crit"
+	
+	for type in $alm_type
+	do
+		set_tmp $pos $type ${val[$i]}
+		let "i=$i+1"
+	done
+	echo "set alm limint ok!"
+}
+
+help=`echo $1 | grep -E "h|H"`
+if [ "$help" == "" ];then
+	if [ $# -eq 1 -o $# -eq 0 ];then
+		show_temp $1
+	else
+	    set_all_alm $1 $2 $3
+	fi    
+else
+	help
+fi	

@@ -1,0 +1,82 @@
+#!/bin/sh
+
+DEVICE_LED_BASE="/sys/class/acorn/cpld/led_"
+
+set_led(){
+	if [ $2 == "off" ];then
+		color="r"
+	    status=$2
+	else		
+		color=$2
+		status=$3
+	fi
+	type=$1
+	
+	if [ "$type" != "run" -a "$type" != "alarm" ];then
+		echo "wrong led type $type!!!"
+		exit -1
+	fi
+		
+	if [ "$color" != "r" -a "$color" != "g" ];then
+		echo "wrong led color $color!!!"
+		exit -1
+	fi
+
+	if [ "$status" != "on" -a "$status" != "off" -a "$status" != "b" ];then
+		echo "wrong led status $status!!!"
+		exit -1
+	fi
+	
+	if [ $status == "off" ];then
+		val=0
+	elif [ $color == "r" -a $status == "on" ];then
+		val=1
+	elif [ $color == "g" -a $status == "on" ];then
+		val=2
+	elif [ $color == "r" -a $status == "b" ];then
+		val=3
+	elif [ $color == "g" -a $status == "b" ];then
+		val=4
+	fi
+	
+	echo "$val" > ${DEVICE_LED_BASE}${type}
+}
+
+show_led(){
+	if [ $# -eq 1 ];then
+		a=$1
+	else
+		a="run alarm"
+	fi
+
+	for type in $a
+	do
+		echo "led $type status is `cat ${DEVICE_LED_BASE}${type}`"
+	done	
+}
+
+help(){
+	printf "
+SET&SHOW led status - Written by wfeng <wfeng@acorn-net.com>
+usage: led <idx> <color> <status>   -- set led status
+                           <idx>    -- run/alarm
+                           <color>  -- g/r
+                           <status> -- on/off/b
+	   eg:led alarm g b -- set run led to green color,and blink per sec.
+	      led alarm     -- show alarm led status
+		  led           -- show all leds status
+		  
+	   led -h | --help\n"
+}
+
+
+help=`echo $1 | grep -E "h|H"`
+if [ "$help" == "" ];then
+	if [ $# -eq 1 -o $# -eq 0 ];then
+		show_led $1
+	else
+	    set_led $1 $2 $3
+	fi    
+else
+	help
+fi	

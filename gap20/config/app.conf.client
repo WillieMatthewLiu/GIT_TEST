@@ -1,0 +1,4 @@
+app
+set ssl ca certificates /etc/openssl/private/client_ca.crt
+set ssl private certificates /etc/openssl/certs/client.crt
+set ssl private key /etc/openssl/private/client.key

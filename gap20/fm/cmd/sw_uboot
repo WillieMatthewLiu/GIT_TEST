@@ -1,0 +1,67 @@
+#!/bin/sh
+
+DEVICE_SW_BASE="/sys/class/acorn/cpld/switchover"
+
+set_switch(){
+	opt=$1
+	val=0
+	Off=`echo $opt | grep -i "off"`
+	On=`echo $opt | grep -i "on"`
+	if [ "$Off" != "" ];then
+		val=1
+	elif [ "$On" != "" ];then
+		val=0
+	else		
+		if [ "$opt" == "0" ];then
+			val=2
+		else
+			val=3			
+		fi
+	fi
+	echo "$val" > ${DEVICE_SW_BASE}
+}
+
+show_switch(){
+	val=`cat ${DEVICE_SW_BASE}`
+	let "upidx=(${val}&0x10)>>4"
+	let "enflag=${val}&3"
+	let "swidx=(${val}&0xc)>>2"
+
+	if [ "$enflag" == "2" ];then
+		enflag="disable"
+	else 
+		enflag="enable"
+	fi
+	
+	if [ "$swidx" == "2" ];then
+		swidx="spi_flash1"
+	else
+		swidx="spi_flash0"
+	fi
+	
+	printf "boot up  :spi_flash${upidx}
+switch   :${enflag}
+switch to:${swidx}\n"
+}
+
+help(){
+	printf "
+SET&SHOW uboot switch to backup - Written by wfeng <wfeng@acorn-net.com>
+usage: sw_uboot <opt>   -- switch uboot
+                <opt>   -- 0/1/on/off: 0-switch to spi flash 0 1- switch to spi flash 1 off-disable switch on-enable switch
+	   eg:sw_uboot 0: enable swith to spi flash 0-switch
+	      sw_uboot  : show switch status
+	   sw_uboot -h | --help\n"
+}
+
+
+help=`echo $1 | grep -E "h|H"`
+if [ "$help" == "" ];then
+	if [ $# -eq 0 ];then
+		show_switch
+	else
+	    set_switch $1
+	fi    
+else
+	help
+fi	

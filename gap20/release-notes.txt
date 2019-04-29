@@ -1,0 +1,18 @@
+Release notes for KED-U500GTA
+
+Change History
+========================================================================
+
+Release 1.0.2
+    Initial release. 
+    Please refer to <KED-U500GTA Feature List and Release.xlsx> for all
+ features.
+
+Guide:
+1. Upgrade card:
+	rpm -Uvh cli-0.1-r1.cortexa8hf_vfp_neon.rpm
+
+
+Known Limitations
+========================================================================
+ 1. Don't support rpm install at gateway.

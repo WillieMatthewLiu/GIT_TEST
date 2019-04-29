@@ -1,0 +1,11 @@
+message Forward_Object
+{
+	required int32 sessionid = 1;
+	required int32 cmd = 2;
+
+	// common data
+	optional string strdata = 3;
+	optional int32 intdata = 4;
+	optional bytes buffdata = 5;
+	required int32 direction = 6; // 0: request   1: response
+}

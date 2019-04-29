@@ -1,0 +1,70 @@
+#!/bin/sh
+get_cpu_usage()
+{
+	local usage=0
+	local total=0
+	local time=0
+	local idle=`head -1 /proc/stat | awk '{print $5}'`
+	local alltime=`head -1 /proc/stat | awk '{for(i=2;i<NF;i++) {print $i}}'`
+	
+	for time in $alltime
+	do
+		let "total=$total+$time"
+	done
+	usage=`echo "scale=1;100-(100*${idle})/${total}"|bc`
+	echo $usage
+}
+
+get_rootfs_usage()
+{
+	local usage=`df -l | grep "/dev/root" | awk '{print $5}'| cut -d "%" -f 1`
+	echo $usage	
+}
+
+get_mem_usage()
+{	
+	Total=`free | grep Mem | awk '{print $2}'`
+	available=`free | grep Mem | awk '{print $7}'`
+	let "used=$Total - $available"
+	echo "$used $Total"| awk '{print $1/$2 * 100}'
+}
+
+help(){
+	printf "
+GET&SHOW HW usage - Written by wfeng <wfeng@acorn-net.com>
+usage: check_usage        -- get HW usage
+                   <idx>  -- cpu/df/mem
+	   eg:check_usage cpu -- show cpu current usage
+		  
+	   check_usage -h | --help\n"
+}
+
+get_hw_usage()
+{
+	local hwtype=$1
+	
+	if [ "$hwtype" == "" ];then
+		local parts="cpu rootfs mem"
+		for part in $parts
+		do
+		local usage=`get_${part}_usage`
+		done
+	else
+		if [ $hwtype != "cpu" -a $hwtype != "rootfs" -a $hwtype != "mem" ];then
+			help
+			exit -1
+		fi
+		
+		hw_usage=`get_${hwtype}_usage`
+		echo $hw_usage
+	fi
+}
+
+help=`echo $1 | grep -E "h|H"`
+if [ "$help" == "" ];then
+	if [ $# -eq 1 -o $# -eq 0 ];then
+		get_hw_usage $1
+	fi    
+else
+	help
+fi	

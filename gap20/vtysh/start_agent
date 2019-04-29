@@ -1,0 +1,16 @@
+#!/bin/sh
+if [ $1 == "p0-p1" ]; then
+    if [ -e /usr/local/etc/southwest_engine/southwest_engine-p0-p1.yaml ]; then 
+        cd /data/agents/southwest_agent
+        rm -f /data/agents/agent-p0-p1.pid
+        python agent.py run 0 1 &
+        cd -
+    fi
+elif [ $1 == "p2-p3" ]; then 
+    if [ -e /usr/local/etc/southwest_engine/southwest_engine-p2-p3.yaml ]; then 
+        cd /data/agents/southwest_agent
+        rm -f /data/agents/agent-p2-p3.pid
+        python agent.py run 2 3 &
+        cd -
+    fi
+fi

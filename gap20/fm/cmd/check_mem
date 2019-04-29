@@ -1,0 +1,77 @@
+#!/bin/sh
+laststats="/var/run/ecc_stat"
+type=$1
+err=0
+ecc_ena=`oct-linux-csr lmc0_config | grep ECC_ENA | awk '{print $5}'`
+
+get_cpu_ecc()
+{
+	local CPU_ECC_PATH="/sys/devices/system/edac/cpu"
+	local ecc_type=$1
+	count=0
+	
+	for i in `seq 0 3`
+	do
+		val=`cat $CPU_ECC_PATH/cpu${i}/${ecc_type}_count`
+		let "count=$count + $val"
+	done
+	echo $count
+}
+
+cpu_err=`get_cpu_ecc $type`
+mc_err=`cat /sys/devices/system/edac/mc/mc0/${type}_count`
+l2c_err=`cat /sys/devices/system/edac/l2c/l2c0/${type}_count`
+
+last_cpu_err="0"
+last_mc_err="0"
+last_l2c_err="0"
+
+if [ -f $laststats ];then
+	val=`cat $laststats | grep cpu_${type}|awk '{print $3}'`
+	if [ "$val" == "" ];then
+		echo "cpu_${type} : $cpu_err" >> $laststats
+	else
+		last_cpu_err=$val
+	fi	
+	
+	val=`cat $laststats | grep mc_${type}|awk '{print $3}'`
+	if [ "$val" == "" ];then
+		echo "mc_${type} : $mc_err" >> $laststats
+	else
+		last_mc_err=$val
+	fi
+	
+	val=`cat $laststats | grep l2c_${type}|awk '{print $3}'`
+	if [ "$val" == "" ];then
+		echo "l2c_${type} : $l2c_err" >> $laststats
+	else
+		last_l2c_err=$val
+	fi
+else
+	touch $laststats
+	echo "cpu_${type} : $last_cpu_err" >> $laststats
+	echo "mc_${type} : $last_mc_err" >> $laststats	
+	echo "l2c_${type} : $last_l2c_err" >> $laststats	
+fi
+
+if [ $ecc_ena -ne 1 ]; then
+	let "err=$err | 1"
+else
+	if [ "$cpu_err" != "$last_cpu_err" ];then
+		sed -i "s/cpu_${type} : \([0-9]\+\)/cpu_${type} : $cpu_err/g" $laststats
+		let "err=$err | 1"
+	fi	
+	
+	if [ "$mc_err" != "$last_mc_err" ];then
+		sed -i "s/mc_${type} : \([0-9]\+\)/mc_${type} : $mc_err/g" $laststats
+		let "err=$err | 1"
+	fi 
+	
+	if [ "$l2c_err" != "$last_l2c_err" ];then
+		sed -i "s/l2c_${type} : \([0-9]\+\)/l2c_${type} : $l2c_err/g" $laststats
+		let "err=$err | 1"
+	fi	
+fi
+echo $err
+
+
